@@ -1,0 +1,277 @@
+{
+  "churchName": "Assembleia de Votação de Departamentos",
+  "votingActive": true,
+  "maxVoters": 0,
+  "mediaPin": "1234",
+  "registeredVoters": [
+    "v_qzwtldxz_mvha40cm"
+  ],
+  "departments": [
+    {
+      "id": 1,
+      "name": "Mídia",
+      "description": "Projeção, transmissão e comunicação visual",
+      "icon": "monitor-play",
+      "closedManually": false,
+      "nullVotes": 0,
+      "candidates": [
+        {
+          "id": "c_1_1",
+          "name": "Adson",
+          "photo": null,
+          "votes": 0
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Sonoplastia",
+      "description": "Áudio, mesa de som e microfonia",
+      "icon": "volume-2",
+      "closedManually": false,
+      "nullVotes": 0,
+      "candidates": [
+        {
+          "id": "c_2_1",
+          "name": "Isaac",
+          "photo": null,
+          "votes": 0
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Programação",
+      "description": "Planejamento e agenda de cultos e eventos",
+      "icon": "calendar-check",
+      "closedManually": false,
+      "nullVotes": 0,
+      "candidates": [
+        {
+          "id": "c_3_1",
+          "name": "Ivone",
+          "photo": null,
+          "votes": 0
+        },
+        {
+          "id": "c_3_2",
+          "name": "Adson",
+          "photo": null,
+          "votes": 0
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Música",
+      "description": "Ministério de louvor, corais e instrumentistas",
+      "icon": "music",
+      "closedManually": false,
+      "nullVotes": 0,
+      "candidates": []
+    },
+    {
+      "id": 5,
+      "name": "D. Infantil",
+      "description": "Ensino bíblico e atividades para crianças",
+      "icon": "baby",
+      "closedManually": false,
+      "nullVotes": 0,
+      "candidates": [
+        {
+          "id": "c_5_1",
+          "name": "Vera",
+          "photo": null,
+          "votes": 0
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "name": "D. Adolescentes",
+      "description": "Discipulado e integração de adolescentes",
+      "icon": "sparkles",
+      "closedManually": false,
+      "nullVotes": 0,
+      "candidates": []
+    },
+    {
+      "id": 7,
+      "name": "D. Jovens",
+      "description": "Mocidade, cultos jovens e evangelismo jovem",
+      "icon": "flame",
+      "closedManually": false,
+      "nullVotes": 0,
+      "candidates": []
+    },
+    {
+      "id": 8,
+      "name": "D. Masculino",
+      "description": "União de homens, comunhão e projetos",
+      "icon": "shield",
+      "closedManually": false,
+      "nullVotes": 0,
+      "candidates": [
+        {
+          "id": "c_8_1",
+          "name": "Paulo Portugal",
+          "photo": null,
+          "votes": 0
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "name": "D. Feminino",
+      "description": "Círculo de oração e ministério de mulheres",
+      "icon": "heart-handshake",
+      "closedManually": false,
+      "nullVotes": 0,
+      "candidates": []
+    },
+    {
+      "id": 10,
+      "name": "D. Patrimônio",
+      "description": "Zeladoria, manutenção e bens da igreja",
+      "icon": "building-2",
+      "closedManually": false,
+      "nullVotes": 0,
+      "candidates": [
+        {
+          "id": "c_10_1",
+          "name": "Erivaldo Canjirana",
+          "photo": null,
+          "votes": 0
+        },
+        {
+          "id": "c_10_2",
+          "name": "Clerisval Café",
+          "photo": null,
+          "votes": 0
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "name": "Ação Social",
+      "description": "Assistência às famílias e arrecadações",
+      "icon": "hand-heart",
+      "closedManually": false,
+      "nullVotes": 0,
+      "candidates": [
+        {
+          "id": "c_11_1",
+          "name": "Dâmara",
+          "photo": null,
+          "votes": 0
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "name": "Ornamentação",
+      "description": "Decoração do templo e eventos especiais",
+      "icon": "flower-2",
+      "closedManually": false,
+      "nullVotes": 0,
+      "candidates": [
+        {
+          "id": "c_12_1",
+          "name": "Jerusa",
+          "photo": null,
+          "votes": 0
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "name": "Cantina / Cozinha",
+      "description": "Alimentação, eventos e hospitalidade gastronômica",
+      "icon": "utensils",
+      "closedManually": false,
+      "nullVotes": 0,
+      "candidates": [
+        {
+          "id": "c_13_1",
+          "name": "Zenaide",
+          "photo": null,
+          "votes": 0
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "name": "C. Pós Culto",
+      "description": "Comunhão e confraternização após os cultos",
+      "icon": "coffee",
+      "closedManually": false,
+      "nullVotes": 0,
+      "candidates": [
+        {
+          "id": "c_14_1",
+          "name": "Dadai",
+          "photo": null,
+          "votes": 0
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "name": "D. Família",
+      "description": "Apoio a casais, lares e encontros de famílias",
+      "icon": "home",
+      "closedManually": false,
+      "nullVotes": 0,
+      "candidates": []
+    },
+    {
+      "id": 16,
+      "name": "Missões / Evangelismo",
+      "description": "Obra missionária, plantação e evangelização",
+      "icon": "globe",
+      "closedManually": false,
+      "nullVotes": 0,
+      "candidates": [
+        {
+          "id": "c_16_1",
+          "name": "Jorlando",
+          "photo": null,
+          "votes": 0
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "name": "D. Visitação / Conforto",
+      "description": "Visitas a enfermos, novos decididos e consolo",
+      "icon": "smile-plus",
+      "closedManually": false,
+      "nullVotes": 0,
+      "candidates": [
+        {
+          "id": "c_17_1",
+          "name": "Hulda",
+          "photo": null,
+          "votes": 0
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "name": "Recepção",
+      "description": "Boas-vindas, acolhimento e orientação aos visitantes",
+      "icon": "door-open",
+      "closedManually": false,
+      "nullVotes": 0,
+      "candidates": [
+        {
+          "id": "c_18_1",
+          "name": "Ivone",
+          "photo": null,
+          "votes": 0
+        }
+      ]
+    }
+  ],
+  "votesByVoter": {}
+}

@@ -1,0 +1,17 @@
+{
+  "name": "votacao-igreja",
+  "version": "1.0.0",
+  "description": "Sistema de Votação em Tempo Real para Departamentos da Igreja",
+  "main": "server.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "qrcode": "^1.5.4",
+    "socket.io": "^4.8.1"
+  }
+}

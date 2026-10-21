@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Votação de Departamentos — Cédula Digital</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..800;1,9..40,400..700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background-color: #F6F4EE;
+      color: #1C1917;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .font-serif-title {
+      font-family: 'Fraunces', Georgia, serif;
+    }
+    body.large-text {
+      font-size: 115%;
+    }
+    .organic-card {
+      background: #FFFFFF;
+      border: 1px solid #E5E0D5;
+      box-shadow: 0 2px 12px rgba(28, 25, 23, 0.04);
+    }
+    .candidate-btn {
+      background: #FFFFFF;
+      border: 1.5px solid #DED8CB;
+      box-shadow: 0 2px 8px rgba(28, 25, 23, 0.03);
+      transition: all 0.16s ease;
+    }
+    .candidate-btn:hover {
+      border-color: #2E5A44;
+      background: #FCFBF9;
+    }
+    .candidate-btn:active {
+      transform: scale(0.985);
+    }
+    .candidate-btn-selected {
+      background: #F4F9F6;
+      border: 2px solid #2E5A44;
+    }
+    @keyframes fadeSlide {
+      0% { opacity: 0; transform: translateY(8px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    .animate-card {
+      animation: fadeSlide 0.25s ease-out forwards;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-[#2E5A44] selection:text-white">
+
+  <!-- Clean Accessible Top Bar -->
+  <header class="bg-[#FAF9F5] border-b border-[#E5E0D5] px-4 py-3.5 sticky top-0 z-30">
+    <div class="max-w-lg mx-auto flex items-center justify-between gap-2">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-[#2E5A44] flex items-center justify-center text-white shadow-xs">
+          <i data-lucide="church" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h1 class="font-serif-title text-base font-bold text-stone-900 leading-tight">Assembleia da Igreja</h1>
+          <div id="voterCredentialBadge" class="flex items-center gap-1.5 text-xs text-[#2E5A44] font-semibold mt-0.5">
+            <span class="w-2 h-2 rounded-full bg-[#2E5A44]"></span>
+            <span>Conectado ao vivo</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Accessibility Font Toggle (18 to 70 years old friendly) -->
+      <button onclick="toggleFontSize()" id="btnFontSize"
+        class="px-3 py-2 rounded-xl bg-white border border-[#DED8CB] text-stone-700 text-xs font-bold flex items-center gap-1.5 active:bg-stone-100 shadow-2xs">
+        <i data-lucide="type" class="w-4 h-4 text-[#9A5B25]"></i>
+        <span>Letra Maior (A+)</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Interactive Container -->
+  <main class="flex-1 max-w-lg w-full mx-auto px-4 py-5 flex flex-col">
+
+    <!-- Dynamic Notification Toast -->
+    <div id="voterToast" class="hidden mb-4 bg-[#2E5A44] text-white font-semibold px-4 py-3 rounded-2xl shadow-md flex items-center gap-2.5 text-sm">
+      <i data-lucide="bell" class="w-5 h-5 shrink-0"></i>
+      <span id="voterToastText">Nova votação liberada!</span>
+    </div>
+
+    <!-- Main Dynamic View -->
+    <div id="mainView" class="flex-1 flex flex-col">
+      <!-- Populated by JS -->
+    </div>
+
+  </main>
+
+  <!-- Clean Confirmation Modal -->
+  <div id="confirmModal" class="fixed inset-0 z-50 hidden items-end sm:items-center justify-center bg-stone-900/40 backdrop-blur-xs p-4">
+    <div class="bg-[#FAF9F5] border border-[#DED8CB] rounded-3xl max-w-md w-full p-6 shadow-2xl animate-card">
+      <div class="text-center">
+        <div id="confirmAvatarContainer" class="mx-auto mb-3 flex items-center justify-center">
+          <div class="w-20 h-20 rounded-2xl bg-[#EBF3EE] border border-[#C5DEC9] text-[#2E5A44] font-serif-title font-bold text-3xl flex items-center justify-center">
+            A
+          </div>
+        </div>
+        <span class="text-xs font-bold uppercase tracking-widest text-[#2E5A44]">Confirme sua escolha</span>
+        <p class="text-sm text-stone-600 mt-1">Para o departamento de <strong id="confirmDeptName" class="text-stone-900"></strong>, você selecionou:</p>
+
+        <div class="my-4 py-4 px-4 rounded-2xl bg-white border border-[#E5E0D5]">
+          <div id="confirmCandidateName" class="font-serif-title text-2xl font-bold text-stone-900">Nome do Candidato</div>
+        </div>
+
+        <div class="space-y-2.5 mt-5">
+          <button id="btnConfirmVote" onclick="submitConfirmedVote()"
+            class="w-full py-4 px-6 rounded-2xl bg-[#2E5A44] hover:bg-[#234735] active:bg-[#1B3829] text-white font-bold text-lg shadow-sm flex items-center justify-center gap-2 transition">
+            <i data-lucide="check-circle-2" class="w-6 h-6"></i>
+            Confirmar Meu Voto
+          </button>
+
+          <button onclick="closeConfirmModal()"
+            class="w-full py-3.5 px-6 rounded-2xl bg-white hover:bg-stone-100 border border-[#DED8CB] text-stone-700 font-bold text-base transition">
+            Voltar e escolher outro
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Equipe de Mídia (PIN para Ativar ou Liberar Próximo Eleitor) -->
+  <div id="mediaPinModal" class="fixed inset-0 z-50 hidden items-end sm:items-center justify-center bg-stone-900/40 backdrop-blur-xs p-4">
+    <div class="bg-[#FAF9F5] border border-[#DED8CB] rounded-3xl max-w-md w-full p-6 shadow-2xl animate-card">
+      <div class="text-center">
+        <div class="w-14 h-14 rounded-2xl bg-[#FDF4EB] border border-[#E8C9A7] text-[#9A5B25] flex items-center justify-center mx-auto mb-3">
+          <i data-lucide="shield-check" class="w-7 h-7"></i>
+        </div>
+        <span class="text-xs font-bold uppercase tracking-widest text-[#9A5B25]">Acesso Restrito • Equipe de Mídia</span>
+        <h3 id="mediaModalTitle" class="font-serif-title text-2xl font-bold text-stone-900 mt-1">Liberar Próximo Eleitor</h3>
+        <p id="mediaModalSubtitle" class="text-xs text-stone-600 mt-1 leading-relaxed">
+          Os votos atuais já estão salvos na apuração. Digite o PIN da Equipe de Mídia para iniciar uma nova cédula em branco neste aparelho:
+        </p>
+
+        <form onsubmit="submitMediaPinForm(event)" class="mt-4 space-y-3 text-left">
+          <div id="mediaDeviceNameWrapper" class="hidden">
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-stone-500 mb-1">
+              Identificação deste Aparelho
+            </label>
+            <input
+              type="text"
+              id="inputMediaDeviceName"
+              placeholder="Ex: Celular Mídia 01"
+              class="w-full bg-white border border-[#DED8CB] focus:border-[#2E5A44] rounded-xl px-4 py-2.5 text-sm font-bold text-stone-900 focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-stone-500 mb-1 text-center">
+              PIN da Equipe de Mídia
+            </label>
+            <input
+              type="password"
+              inputmode="numeric"
+              id="inputMediaPinCode"
+              required
+              placeholder="••••"
+              class="w-full text-center tracking-[0.4em] font-mono text-2xl font-extrabold bg-white border border-[#DED8CB] focus:border-[#2E5A44] rounded-2xl px-4 py-3 text-stone-900 focus:outline-none"
+            />
+          </div>
+
+          <div class="space-y-2 pt-2">
+            <button type="submit" id="btnSubmitMediaPin"
+              class="w-full py-3.5 px-6 rounded-2xl bg-[#2E5A44] hover:bg-[#234735] text-white font-bold text-base shadow-sm flex items-center justify-center gap-2 transition">
+              <i data-lucide="rotate-cw" class="w-5 h-5"></i>
+              <span id="btnSubmitMediaPinText">Confirmar e Iniciar Novo Voto</span>
+            </button>
+
+            <button type="button" onclick="closeMediaPinModal()"
+              class="w-full py-3 px-6 rounded-2xl bg-white hover:bg-stone-100 border border-[#DED8CB] text-stone-700 font-bold text-sm transition">
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="max-w-lg w-full mx-auto px-4 py-4 text-center text-xs text-stone-500 space-y-2">
+    <div>Voto único por membro presente • Sincronização instantânea</div>
+    <div>
+      <button type="button" onclick="openMediaPinModal(isMediaDevice ? 'next_voter' : 'authorize')"
+        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#EFECE4]/80 hover:bg-[#E5E0D5] text-stone-600 font-semibold text-[11px] transition">
+        <i data-lucide="lock" class="w-3 h-3 text-[#9A5B25]"></i>
+        <span id="footerMediaBtnLabel">Equipe de Mídia</span>
+      </button>
+    </div>
+  </footer>
+
+  <script>
+    function getOrCreateVoterId() {
+      let id = localStorage.getItem('igreja_voter_id');
+      if (!id) {
+        id = 'v_' + Math.random().toString(36).substring(2, 10) + '_' + Date.now().toString(36);
+        localStorage.setItem('igreja_voter_id', id);
+      }
+      return id;
+    }
+
+    let voterId = getOrCreateVoterId();
+    const urlParams = new URLSearchParams(window.location.search);
+    let isMediaDevice = localStorage.getItem('igreja_is_media_device') === 'true';
+    let mediaDeviceName = localStorage.getItem('igreja_media_device_name') || 'Aparelho Mídia 01';
+    let mediaModalMode = 'next_voter'; // 'authorize' | 'next_voter'
+
+    const socket = io({
+      query: {
+        role: 'voter',
+        voterId,
+        isMedia: isMediaDevice ? 'true' : 'false',
+        mediaDeviceName
+      }
+    });
+
+    let departments = [];
+    let votingActive = true;
+    let myVotes = {};
+    let voterStatus = {
+      isRegistered: true,
+      voterNumber: null,
+      limitReached: false,
+      maxVoters: 0,
+      registeredCount: 0
+    };
+    let forcedReviewDeptId = null;
+    let pendingVote = null;
+    let previousVotingDeptIds = new Set();
+
+    function updateFooterMediaLabel() {
+      const lbl = document.getElementById('footerMediaBtnLabel');
+      if (!lbl) return;
+      if (isMediaDevice) {
+        lbl.textContent = `${mediaDeviceName} • Liberar Próximo Eleitor`;
+      } else {
+        lbl.textContent = 'Equipe de Mídia';
+      }
+    }
+    updateFooterMediaLabel();
+
+    // Se entrou via /votar?midia=1 e ainda não autorizou, abre o modal de PIN automaticamente
+    if (urlParams.get('midia') === '1' && !isMediaDevice) {
+      window.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => openMediaPinModal('authorize'), 400);
+      });
+    }
+
+    function playUrnaSound() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const now = ctx.currentTime;
+
+        const osc1 = ctx.createOscillator();
+        const gain1 = ctx.createGain();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(880, now);
+        osc1.frequency.setValueAtTime(1174.66, now + 0.09);
+        gain1.gain.setValueAtTime(0.12, now);
+        gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
+
+        osc1.connect(gain1);
+        gain1.connect(ctx.destination);
+        osc1.start(now);
+        osc1.stop(now + 0.32);
+      } catch (e) {}
+    }
+
+    function toggleFontSize() {
+      document.body.classList.toggle('large-text');
+      const isLarge = document.body.classList.contains('large-text');
+      const btn = document.getElementById('btnFontSize');
+      btn.querySelector('span').textContent = isLarge ? 'Letra Normal (A-)' : 'Letra Maior (A+)';
+    }
+
+    socket.on('state:update', (payload) => {
+      if (typeof payload.votingActive === 'boolean') {
+        votingActive = payload.votingActive;
+      }
+
+      const currentVotingIds = new Set(
+        (payload.departments || []).filter((d) => d.status === 'voting').map((d) => d.id)
+      );
+
+      if (previousVotingDeptIds.size > 0) {
+        for (const id of currentVotingIds) {
+          if (!previousVotingDeptIds.has(id)) {
+            const addedDept = payload.departments.find((d) => d.id === id);
+            if (addedDept) {
+              showToast(`Nova votação aberta: ${addedDept.name}`);
+            }
+          }
+        }
+      }
+      previousVotingDeptIds = currentVotingIds;
+
+      departments = payload.departments || [];
+      renderVoterScreen();
+    });
+
+    socket.on('voter:myVotes', (serverVotes) => {
+      myVotes = serverVotes || {};
+      renderVoterScreen();
+    });
+
+    socket.on('voter:status', (statusPayload) => {
+      if (statusPayload) {
+        voterStatus = statusPayload;
+        updateCredentialHeader();
+        renderVoterScreen();
+      }
+    });
+
+    // Quando a Equipe de Mídia libera remotamente este aparelho pelo Painel Principal
+    socket.on('media:remoteReset', (data) => {
+      if (data && data.newVoterId) {
+        voterId = data.newVoterId;
+        localStorage.setItem('igreja_voter_id', voterId);
+        myVotes = {};
+        forcedReviewDeptId = null;
+        if (data.voterStatus) {
+          voterStatus = data.voterStatus;
+        }
+        updateCredentialHeader();
+        renderVoterScreen();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        showToast('Voto anterior salvo! Aparelho pronto para o próximo eleitor.');
+      }
+    });
+
+    function updateCredentialHeader() {
+      const badge = document.getElementById('voterCredentialBadge');
+      const mediaPrefix = isMediaDevice ? `📱 ${mediaDeviceName} • ` : '';
+      if (voterStatus.limitReached && !voterStatus.isRegistered) {
+        badge.className = 'flex items-center gap-1.5 text-xs text-[#9A5B25] font-bold mt-0.5';
+        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-[#9A5B25]"></span><span>${mediaPrefix}Limite atingido (${voterStatus.maxVoters}/${voterStatus.maxVoters})</span>`;
+      } else if (voterStatus.isRegistered && voterStatus.maxVoters > 0) {
+        badge.className = 'flex items-center gap-1.5 text-xs text-[#2E5A44] font-bold mt-0.5';
+        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-[#2E5A44]"></span><span>${mediaPrefix}Presente #${voterStatus.voterNumber} de ${voterStatus.maxVoters}</span>`;
+      } else {
+        badge.className = 'flex items-center gap-1.5 text-xs text-[#2E5A44] font-semibold mt-0.5';
+        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-[#2E5A44]"></span><span>${mediaPrefix}Conectado</span>`;
+      }
+    }
+
+    function openMediaPinModal(mode = 'next_voter') {
+      mediaModalMode = mode;
+      const modal = document.getElementById('mediaPinModal');
+      const titleEl = document.getElementById('mediaModalTitle');
+      const subEl = document.getElementById('mediaModalSubtitle');
+      const nameWrap = document.getElementById('mediaDeviceNameWrapper');
+      const nameInput = document.getElementById('inputMediaDeviceName');
+      const pinInput = document.getElementById('inputMediaPinCode');
+      const btnText = document.getElementById('btnSubmitMediaPinText');
+
+      pinInput.value = '';
+      nameInput.value = mediaDeviceName;
+
+      if (mode === 'authorize' && !isMediaDevice) {
+        titleEl.textContent = 'Ativar Aparelho da Mídia';
+        subEl.textContent = 'Ative este celular/tablet para que a Equipe de Mídia possa liberar novas votações para múltiplos membros sem perder os votos anteriores:';
+        nameWrap.classList.remove('hidden');
+        btnText.textContent = 'Ativar Modo Equipe de Mídia';
+      } else {
+        titleEl.textContent = 'Liberar Próximo Eleitor';
+        subEl.textContent = 'Os votos deste membro já estão salvos na contagem oficial. Digite o PIN da Equipe de Mídia para zerar a tela para a próxima pessoa:';
+        nameWrap.classList.add('hidden');
+        btnText.textContent = 'Salvar e Iniciar Próximo Eleitor';
+      }
+
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      lucide.createIcons();
+      setTimeout(() => pinInput.focus(), 100);
+    }
+
+    function closeMediaPinModal() {
+      const modal = document.getElementById('mediaPinModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function submitMediaPinForm(e) {
+      e.preventDefault();
+      const pin = document.getElementById('inputMediaPinCode').value.trim();
+      const customName = document.getElementById('inputMediaDeviceName').value.trim() || mediaDeviceName;
+      if (!pin) return;
+
+      if (mediaModalMode === 'authorize' && !isMediaDevice) {
+        socket.emit('media:authorize', { pin, deviceName: customName }, (res) => {
+          if (res && res.ok) {
+            isMediaDevice = true;
+            mediaDeviceName = res.deviceName || customName;
+            localStorage.setItem('igreja_is_media_device', 'true');
+            localStorage.setItem('igreja_media_device_name', mediaDeviceName);
+            updateFooterMediaLabel();
+            updateCredentialHeader();
+            closeMediaPinModal();
+            renderVoterScreen();
+            showToast(`Modo Equipe de Mídia ativado (${mediaDeviceName})!`);
+          } else {
+            alert((res && res.error) || 'PIN incorreto.');
+          }
+        });
+      } else {
+        socket.emit(
+          'media:nextVoter',
+          { pin, currentVoterId: voterId, deviceName: mediaDeviceName },
+          (res) => {
+            if (res && res.ok) {
+              isMediaDevice = true;
+              localStorage.setItem('igreja_is_media_device', 'true');
+              voterId = res.newVoterId;
+              localStorage.setItem('igreja_voter_id', voterId);
+              myVotes = {};
+              forcedReviewDeptId = null;
+              if (res.voterStatus) {
+                voterStatus = res.voterStatus;
+              }
+              updateFooterMediaLabel();
+              updateCredentialHeader();
+              closeMediaPinModal();
+              renderVoterScreen();
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+              showToast('Votos anteriores salvos! Pronto para o próximo eleitor.');
+            } else {
+              alert((res && res.error) || 'Não foi possível liberar para o próximo eleitor.');
+            }
+          }
+        );
+      }
+    }
+
+    function retryCheckin() {
+      socket.emit('voter:checkin', { voterId }, (res) => {
+        if (res && res.ok) {
+          voterStatus = res.voterStatus;
+          updateCredentialHeader();
+          renderVoterScreen();
+          showToast('Presença confirmada! Você já pode votar.');
+        } else if (res && res.error) {
+          alert(res.error);
+        }
+      });
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('voterToast');
+      document.getElementById('voterToastText').textContent = msg;
+      toast.classList.remove('hidden');
+      setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 4500);
+    }
+
+    function getActiveVotingDepartments() {
+      return departments.filter((d) => d.status === 'voting');
+    }
+
+    function renderVoterScreen() {
+      const container = document.getElementById('mainView');
+
+      // CASO 0: Limite de presentes atingido
+      if (voterStatus.limitReached && !voterStatus.isRegistered) {
+        container.innerHTML = `
+          <div class="animate-card my-auto organic-card rounded-3xl p-6 text-center space-y-4">
+            <div class="w-14 h-14 rounded-2xl bg-[#FDF4EB] border border-[#E8C9A7] text-[#9A5B25] flex items-center justify-center mx-auto">
+              <i data-lucide="users" class="w-7 h-7"></i>
+            </div>
+            <span class="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-[#FDF4EB] text-[#9A5B25]">
+              Quórum Completo (${voterStatus.maxVoters} de ${voterStatus.maxVoters})
+            </span>
+            <h2 class="font-serif-title text-2xl font-bold text-stone-900">Limite de Presentes Atingido</h2>
+            <p class="text-sm text-stone-600 leading-relaxed">
+              A mesa diretora contabilizou <strong>${voterStatus.maxVoters} membros presentes</strong> na assembleia e todas as vagas já foram preenchidas.
+            </p>
+            <p class="text-xs text-stone-500">
+              Se você está presente no plenário, peça ao secretário(a) para ajustar a contagem no painel principal.
+            </p>
+            <button onclick="retryCheckin()"
+              class="w-full py-4 px-5 rounded-2xl bg-[#2E5A44] hover:bg-[#234735] text-white font-bold text-base transition flex items-center justify-center gap-2">
+              <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+              Verificar Vaga Novamente
+            </button>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      // CASO 0.5: Votação pausada pela mesa diretora
+      if (!votingActive) {
+        container.innerHTML = `
+          <div class="animate-card my-auto organic-card rounded-3xl p-7 text-center space-y-4">
+            <div class="w-14 h-14 rounded-2xl bg-[#F6F4EE] border border-[#DED8CB] text-stone-700 flex items-center justify-center mx-auto">
+              <i data-lucide="clock" class="w-7 h-7"></i>
+            </div>
+            <span class="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-[#F6F4EE] text-stone-600 border border-[#E5E0D5]">
+              Aguardando Liberação
+            </span>
+            <h2 class="font-serif-title text-2xl font-bold text-stone-900">Votação Pausada</h2>
+            <p class="text-sm text-stone-600 leading-relaxed">
+              Seu aparelho já está conectado. Assim que a mesa diretora iniciar a votação no painel, as opções aparecerão automaticamente nesta tela.
+            </p>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      const votingDepts = getActiveVotingDepartments();
+      const pendingDepts = votingDepts.filter((d) => !myVotes[d.id]);
+
+      let currentDept = null;
+      if (forcedReviewDeptId) {
+        currentDept = votingDepts.find((d) => d.id === forcedReviewDeptId) || null;
+        if (!currentDept) forcedReviewDeptId = null;
+      }
+
+      if (!currentDept && pendingDepts.length > 0) {
+        currentDept = pendingDepts[0];
+      }
+
+      // CASO 1: Votação Guiada (1 departamento por vez)
+      if (currentDept) {
+        const totalSteps = votingDepts.length;
+        const completedCount = votingDepts.filter((d) => Boolean(myVotes[d.id])).length;
+        const currentStepNumber = votingDepts.findIndex((d) => d.id === currentDept.id) + 1;
+        const progressPercent = totalSteps > 0 ? Math.round(((currentStepNumber - 1) / totalSteps) * 100) : 0;
+        const currentSelectedCandidateId = myVotes[currentDept.id];
+
+        const candidatesHtml = currentDept.candidates.map((cand, idx) => {
+          const isSelected = currentSelectedCandidateId === cand.id;
+          const tones = [
+            'bg-[#EBF3EE] text-[#2E5A44] border-[#C5DEC9]',
+            'bg-[#FDF4EB] text-[#9A5B25] border-[#E8C9A7]',
+            'bg-[#EFECE4] text-stone-700 border-[#D6D0C4]',
+            'bg-[#EEF2F6] text-slate-700 border-[#CBD5E1]'
+          ];
+          const avatarTone = tones[idx % tones.length];
+
+          const avatarHtml = cand.photo
+            ? `<img src="${cand.photo}" alt="${cand.name}" class="w-14 h-14 rounded-2xl object-cover border border-[#DED8CB] shrink-0" />`
+            : `<div class="w-14 h-14 rounded-2xl ${avatarTone} border flex items-center justify-center font-serif-title font-bold text-2xl shrink-0">
+                ${cand.name.charAt(0).toUpperCase()}
+              </div>`;
+
+          return `
+            <button
+              type="button"
+              onclick="openConfirmModal(${currentDept.id}, '${cand.id}')"
+              class="candidate-btn ${isSelected ? 'candidate-btn-selected' : ''} w-full text-left rounded-2xl p-4 flex items-center justify-between gap-4">
+              <div class="flex items-center gap-3.5 min-w-0">
+                ${avatarHtml}
+                <div class="min-w-0">
+                  <div class="text-xs text-stone-500 font-medium">Toque para selecionar</div>
+                  <div class="text-xl font-extrabold text-stone-900 leading-snug break-words">${cand.name}</div>
+                  ${isSelected ? '<span class="inline-block mt-0.5 text-xs font-bold text-[#2E5A44]">✓ Seu voto atual</span>' : ''}
+                </div>
+              </div>
+
+              <div class="w-10 h-10 rounded-xl bg-[#EBF3EE] text-[#2E5A44] flex items-center justify-center shrink-0">
+                <i data-lucide="chevron-right" class="w-5 h-5"></i>
+              </div>
+            </button>
+          `;
+        }).join('');
+
+        container.innerHTML = `
+          <div class="animate-card flex-1 flex flex-col">
+            <!-- Step Progress Header -->
+            <div class="organic-card rounded-2xl p-4 mb-4">
+              <div class="flex items-center justify-between text-xs font-bold uppercase tracking-wider mb-2">
+                <span class="text-[#2E5A44]">Votação ${currentStepNumber} de ${totalSteps}</span>
+                <span class="text-stone-500">${completedCount} de ${totalSteps} concluídas</span>
+              </div>
+              <div class="w-full h-2 bg-[#EFECE4] rounded-full overflow-hidden">
+                <div class="h-full bg-[#2E5A44] transition-all duration-300 rounded-full" style="width: ${Math.max(12, progressPercent)}%"></div>
+              </div>
+            </div>
+
+            <!-- Department Ballot Card -->
+            <div class="organic-card rounded-3xl p-5 mb-4">
+              <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-[#F6F4EE] text-stone-600 border border-[#E5E0D5] mb-2">
+                Departamento #${currentDept.number}
+              </div>
+              <h2 class="font-serif-title text-3xl font-bold text-stone-900 tracking-tight">${currentDept.name}</h2>
+              <p class="text-sm text-stone-600 mt-1">
+                Escolha um dos candidatos abaixo:
+              </p>
+
+              <div class="space-y-3 mt-5">
+                ${candidatesHtml}
+
+                <!-- Opção de Voto Nulo -->
+                <div class="pt-2 border-t border-[#ECE8DF]">
+                  <button
+                    type="button"
+                    onclick="openConfirmModal(${currentDept.id}, 'NULO')"
+                    class="candidate-btn ${currentSelectedCandidateId === 'NULO' ? 'candidate-btn-selected' : ''} w-full text-left rounded-2xl p-3.5 flex items-center justify-between gap-4 bg-[#FAF9F5]">
+                    <div class="flex items-center gap-3.5 min-w-0">
+                      <div class="w-12 h-12 rounded-2xl bg-stone-200 border border-stone-300 text-stone-600 flex items-center justify-center font-bold text-lg shrink-0">
+                        Ø
+                      </div>
+                      <div class="min-w-0">
+                        <div class="text-xs text-stone-500 font-medium">Não escolher nenhum candidato</div>
+                        <div class="text-lg font-extrabold text-stone-700 leading-snug">Voto Nulo</div>
+                        ${currentSelectedCandidateId === 'NULO' ? '<span class="inline-block mt-0.5 text-xs font-bold text-[#2E5A44]">✓ Seu voto atual</span>' : ''}
+                      </div>
+                    </div>
+
+                    <div class="w-10 h-10 rounded-xl bg-stone-200/80 text-stone-600 flex items-center justify-center shrink-0">
+                      <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              ${forcedReviewDeptId ? `
+                <button onclick="cancelReview()" class="mt-4 w-full py-3 rounded-2xl bg-[#F6F4EE] border border-[#DED8CB] text-stone-700 font-bold text-sm">
+                  Voltar ao meu extrato
+                </button>
+              ` : ''}
+            </div>
+          </div>
+        `;
+
+        lucide.createIcons();
+        return;
+      }
+
+      // CASO 2: Extrato Final dos Votos + Eleitos por Aclamação
+      const contestedDepts = departments.filter((d) => d.status === 'voting' || d.status === 'closed');
+      const singleElectedDepts = departments.filter((d) => d.status === 'elected_single');
+      const emptyDepts = departments.filter((d) => d.status === 'empty');
+
+      const myVotedListHtml = contestedDepts.map((dept) => {
+        const chosenId = myVotes[dept.id];
+        const isNullVote = chosenId === 'NULO';
+        const chosenCand = isNullVote ? null : dept.candidates.find((c) => c.id === chosenId);
+
+        const avatarSmall = isNullVote
+          ? `<span class="w-7 h-7 rounded-lg bg-stone-200 text-stone-600 font-bold text-xs flex items-center justify-center shrink-0">Ø</span>`
+          : chosenCand && chosenCand.photo
+          ? `<img src="${chosenCand.photo}" alt="${chosenCand.name}" class="w-9 h-9 rounded-xl object-cover border border-[#DED8CB] shrink-0" />`
+          : `<i data-lucide="check-circle-2" class="w-5 h-5 text-[#2E5A44] shrink-0"></i>`;
+
+        const chosenLabel = isNullVote
+          ? 'Voto Nulo'
+          : chosenCand
+          ? chosenCand.name
+          : 'Encerrado';
+
+        return `
+          <div class="organic-card rounded-2xl p-4 flex items-center justify-between gap-3">
+            <div class="min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold px-2 py-0.5 rounded-md bg-[#F6F4EE] text-stone-600 border border-[#E5E0D5]">#${dept.number}</span>
+                <span class="text-sm font-bold text-stone-600">${dept.name}</span>
+              </div>
+              <div class="mt-1.5 flex items-center gap-2.5">
+                ${avatarSmall}
+                <span class="font-serif-title text-lg font-bold ${isNullVote ? 'text-stone-600' : 'text-stone-900'}">${chosenLabel}</span>
+              </div>
+            </div>
+
+            ${dept.status === 'voting' ? `
+              <button onclick="reviewDept(${dept.id})"
+                class="px-3.5 py-2 rounded-xl bg-[#F6F4EE] hover:bg-[#EFECE4] text-stone-700 text-xs font-bold shrink-0 border border-[#DED8CB]">
+                Alterar
+              </button>
+            ` : `
+              <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-stone-100 text-stone-600">Encerrado</span>
+            `}
+          </div>
+        `;
+      }).join('');
+
+      const singleElectedHtml = singleElectedDepts.map((dept) => {
+        const leader = dept.candidates[0];
+        const leaderAvatar = leader && leader.photo
+          ? `<img src="${leader.photo}" alt="${leader.name}" class="w-10 h-10 rounded-xl object-cover border border-[#E8C9A7] shrink-0" />`
+          : `<div class="w-10 h-10 rounded-xl bg-[#FDF4EB] border border-[#E8C9A7] text-[#9A5B25] font-bold text-sm flex items-center justify-center shrink-0">
+              ${leader ? leader.name.charAt(0).toUpperCase() : ''}
+            </div>`;
+
+        return `
+          <div class="bg-white border border-[#E5E0D5] rounded-2xl p-3.5 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+              ${leaderAvatar}
+              <div class="min-w-0">
+                <div class="text-xs text-stone-500 font-medium">#${dept.number} • ${dept.name}</div>
+                <div class="text-base font-bold text-stone-900 truncate">${leader ? leader.name : ''}</div>
+              </div>
+            </div>
+            <span class="px-2.5 py-1 rounded-full text-[11px] font-bold uppercase bg-[#FDF4EB] text-[#9A5B25] border border-[#F0D9C0] shrink-0">
+              Eleito
+            </span>
+          </div>
+        `;
+      }).join('');
+
+      const mediaResetCardHtml = isMediaDevice
+        ? `
+          <div class="organic-card rounded-3xl p-5 border-2 border-[#9A5B25] bg-[#FDF8F2]">
+            <div class="flex items-center justify-between gap-2 mb-2">
+              <span class="text-xs font-bold uppercase tracking-wider text-[#9A5B25] flex items-center gap-1.5">
+                <i data-lucide="tablet-smartphone" class="w-4 h-4"></i>
+                ${mediaDeviceName} • Equipe de Mídia
+              </span>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FDF4EB] text-[#9A5B25] border border-[#E8C9A7]">
+                Restrito c/ PIN
+              </span>
+            </div>
+            <p class="text-xs text-stone-600 mb-3.5 leading-relaxed">
+              Entregue o aparelho de volta para a <strong>Equipe de Mídia</strong>. O obreiro usará o PIN para salvar estes votos e liberar o aparelho para o próximo membro:
+            </p>
+            <button type="button" onclick="openMediaPinModal('next_voter')"
+              class="w-full py-4 px-5 rounded-2xl bg-[#9A5B25] hover:bg-[#824B1D] text-white font-extrabold text-base shadow-sm flex items-center justify-center gap-2 transition">
+              <i data-lucide="rotate-cw" class="w-5 h-5"></i>
+              Liberar para Próximo Eleitor (PIN)
+            </button>
+          </div>
+        `
+        : '';
+
+      container.innerHTML = `
+        <div class="animate-card space-y-5">
+          <!-- Warm Organic Completion Banner -->
+          <div class="organic-card rounded-3xl p-6 text-center border-[#C5DEC9] bg-[#F9FCFA]">
+            <div class="w-14 h-14 rounded-2xl bg-[#2E5A44] text-white flex items-center justify-center mx-auto mb-3 shadow-xs">
+              <i data-lucide="check" class="w-8 h-8 stroke-[2.5]"></i>
+            </div>
+            <h2 class="font-serif-title text-2xl font-bold text-stone-900">Votação Concluída</h2>
+            <p class="text-sm text-stone-600 mt-1">
+              Confira abaixo o comprovante das suas escolhas. Caso uma nova votação seja aberta no telão, ela aparecerá aqui automaticamente.
+            </p>
+          </div>
+
+          ${mediaResetCardHtml}
+
+          <!-- Extrato dos Votos em Disputa -->
+          <div class="space-y-2.5">
+            <div class="flex items-center justify-between px-1">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-[#2E5A44] flex items-center gap-1.5">
+                <i data-lucide="receipt" class="w-4 h-4"></i>
+                Seu Extrato de Votos (${contestedDepts.length})
+              </h3>
+            </div>
+            ${myVotedListHtml || '<p class="text-sm text-stone-500">Nenhuma votação em disputa no momento.</p>'}
+          </div>
+
+          <!-- Departamentos com Candidato Único -->
+          <div class="space-y-2.5 pt-2">
+            <div class="px-1">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-[#9A5B25] flex items-center gap-1.5">
+                <i data-lucide="award" class="w-4 h-4"></i>
+                Eleitos por Candidato Único (${singleElectedDepts.length})
+              </h3>
+              <p class="text-xs text-stone-500 mt-0.5">
+                Departamentos com indicação única:
+              </p>
+            </div>
+            <div class="grid grid-cols-1 gap-2">
+              ${singleElectedHtml}
+            </div>
+          </div>
+
+          ${emptyDepts.length > 0 ? `
+            <div class="bg-[#FAF9F5] border border-[#DED8CB] border-dashed rounded-2xl p-4 text-xs text-stone-500">
+              <strong class="text-stone-700">Aguardando indicação (${emptyDepts.length}):</strong>
+              ${emptyDepts.map((d) => d.name).join(', ')}.
+            </div>
+          ` : ''}
+        </div>
+      `;
+
+      lucide.createIcons();
+    }
+
+    function openConfirmModal(deptId, candidateId) {
+      const dept = departments.find((d) => d.id === deptId);
+      if (!dept) return;
+
+      if (candidateId === 'NULO') {
+        pendingVote = {
+          deptId: dept.id,
+          deptName: dept.name,
+          candidateId: 'NULO',
+          candidateName: 'Voto Nulo'
+        };
+
+        document.getElementById('confirmDeptName').textContent = dept.name;
+        document.getElementById('confirmCandidateName').textContent = 'Voto Nulo';
+        document.getElementById('confirmAvatarContainer').innerHTML = `
+          <div class="w-20 h-20 rounded-2xl bg-stone-200 border border-stone-300 text-stone-600 font-bold text-3xl flex items-center justify-center">
+            Ø
+          </div>
+        `;
+
+        const modal = document.getElementById('confirmModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        return;
+      }
+
+      const cand = dept.candidates.find((c) => c.id === candidateId);
+      if (!cand) return;
+
+      pendingVote = {
+        deptId: dept.id,
+        deptName: dept.name,
+        candidateId: cand.id,
+        candidateName: cand.name
+      };
+
+      document.getElementById('confirmDeptName').textContent = dept.name;
+      document.getElementById('confirmCandidateName').textContent = cand.name;
+
+      const avatarContainer = document.getElementById('confirmAvatarContainer');
+      if (cand.photo) {
+        avatarContainer.innerHTML = `<img src="${cand.photo}" alt="${cand.name}" class="w-24 h-24 rounded-2xl object-cover border-2 border-[#2E5A44] shadow-sm" />`;
+      } else {
+        avatarContainer.innerHTML = `<div class="w-20 h-20 rounded-2xl bg-[#EBF3EE] border border-[#C5DEC9] text-[#2E5A44] font-serif-title font-bold text-3xl flex items-center justify-center">
+          ${cand.name.charAt(0).toUpperCase()}
+        </div>`;
+      }
+
+      const modal = document.getElementById('confirmModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeConfirmModal() {
+      pendingVote = null;
+      const modal = document.getElementById('confirmModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function submitConfirmedVote() {
+      if (!pendingVote) return;
+      const { deptId, candidateId } = pendingVote;
+
+      const btn = document.getElementById('btnConfirmVote');
+      btn.disabled = true;
+      btn.innerHTML = 'Registrando...';
+
+      socket.emit('vote:cast', { voterId, deptId, candidateId }, (res) => {
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="check-circle-2" class="w-6 h-6"></i> Confirmar Meu Voto';
+
+        if (res && res.ok) {
+          playUrnaSound();
+          myVotes = res.myVotes || myVotes;
+          forcedReviewDeptId = null;
+          closeConfirmModal();
+          renderVoterScreen();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+          alert((res && res.error) || 'Não foi possível registrar seu voto.');
+          closeConfirmModal();
+        }
+      });
+    }
+
+    function reviewDept(deptId) {
+      forcedReviewDeptId = deptId;
+      renderVoterScreen();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function cancelReview() {
+      forcedReviewDeptId = null;
+      renderVoterScreen();
+    }
+  </script>
+</body>
+</html>
