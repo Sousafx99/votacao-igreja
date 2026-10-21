@@ -288,8 +288,9 @@ function loadState() {
           maxVoters: typeof parsed.maxVoters === 'number' ? parsed.maxVoters : 0,
           mediaPin: parsed.mediaPin ? String(parsed.mediaPin) : '1234',
           registeredVoters: Array.isArray(parsed.registeredVoters) ? parsed.registeredVoters : [],
-          departments: parsed.departments.map((d) => ({
+          departments: parsed.departments.map((d, idx) => ({
             ...d,
+            number: d.number || d.id || idx + 1,
             nullVotes: d.nullVotes || 0,
             candidates: (d.candidates || [])
               .filter(
@@ -367,7 +368,7 @@ function recalculateVotes() {
 
 function getEnrichedDepartments() {
   recalculateVotes();
-  return state.departments.map((dept) => {
+  return state.departments.map((dept, idx) => {
     // Regra estrita:
     // 0 candidatos -> 'empty' (Sem Candidato)
     // 1 candidato  -> 'elected_single' (Eleito automaticamente - voto nulo NUNCA conta como candidato)
@@ -390,6 +391,7 @@ function getEnrichedDepartments() {
 
     return {
       ...dept,
+      number: dept.number || dept.id || idx + 1,
       validVotes: candidateVotes,
       nullVotes,
       totalVotes,

@@ -1051,7 +1051,7 @@
       });
 
       // Opção B: Ordem numérica fixa de 1 a 18 sempre
-      filtered = [...filtered].sort((a, b) => a.number - b.number);
+      filtered = [...filtered].sort((a, b) => (a.number ?? a.id) - (b.number ?? b.id));
 
       grid.innerHTML = filtered.map((dept) => {
         let cardStyle = 'organic-card organic-card-interactive';
@@ -1155,7 +1155,7 @@
             <div class="flex items-center justify-between gap-2">
               <div class="flex items-center gap-2.5">
                 <span class="w-8 h-8 rounded-xl bg-[#F6F4EE] text-stone-600 font-bold text-xs flex items-center justify-center border border-[#E5E0D5]">
-                  ${dept.number}
+                  ${dept.number ?? dept.id}
                 </span>
                 <h3 class="font-serif-title font-bold text-lg text-stone-900 leading-tight">${dept.name}</h3>
               </div>
@@ -1314,7 +1314,7 @@
 
       const maxVoters = appState.stats.maxVoters || 0;
 
-      document.getElementById('modalDeptNumber').textContent = `#${dept.number}`;
+      document.getElementById('modalDeptNumber').textContent = `#${dept.number ?? dept.id}`;
       document.getElementById('modalDeptName').textContent = dept.name;
       document.getElementById('modalStatusBadge').innerHTML = getStatusBadgeHtml(dept);
       document.getElementById('modalTotalVotes').textContent = dept.totalVotes;
