@@ -34,7 +34,7 @@ function getOfficialRealDepartments() {
       icon: 'video',
       closedManually: false,
       nullVotes: 0,
-      candidates: [{ id: 'c_1_1', name: 'Adson', photo: null, votes: 0 }]
+      candidates: [{ id: 'c_1_1', name: 'Adson Sousa', photo: null, votes: 0 }]
     },
     {
       id: 2,
@@ -44,7 +44,7 @@ function getOfficialRealDepartments() {
       icon: 'volume-2',
       closedManually: false,
       nullVotes: 0,
-      candidates: [{ id: 'c_2_1', name: 'Isaac', photo: null, votes: 0 }]
+      candidates: [{ id: 'c_2_1', name: 'Isaac Portugal', photo: null, votes: 0 }]
     },
     {
       id: 3,
@@ -55,8 +55,8 @@ function getOfficialRealDepartments() {
       closedManually: false,
       nullVotes: 0,
       candidates: [
-        { id: 'c_3_1', name: 'Ivone', photo: null, votes: 0 },
-        { id: 'c_3_2', name: 'Adson', photo: null, votes: 0 }
+        { id: 'c_3_1', name: 'Ivone Portugal', photo: null, votes: 0 },
+        { id: 'c_3_2', name: 'Adson Sousa', photo: null, votes: 0 }
       ]
     },
     {
@@ -67,7 +67,7 @@ function getOfficialRealDepartments() {
       icon: 'music',
       closedManually: false,
       nullVotes: 0,
-      candidates: []
+      candidates: [ {id: 'c_4_1', name: 'Ana Júlia', photo: null, votes: 0 } ]
     },
     {
       id: 5,
@@ -87,7 +87,7 @@ function getOfficialRealDepartments() {
       icon: 'sparkles',
       closedManually: false,
       nullVotes: 0,
-      candidates: []
+      candidates: [ { id: 'c_6_1', name: 'Pedro / Ludmila', photo: null, votes: 0  } ]
     },
     {
       id: 7,
@@ -97,7 +97,7 @@ function getOfficialRealDepartments() {
       icon: 'flame',
       closedManually: false,
       nullVotes: 0,
-      candidates: []
+      candidates: [ { id: 'c_7_1', name: 'Davi Zidargo', photo: null, votes: 0 } ]
     },
     {
       id: 8,
@@ -117,7 +117,7 @@ function getOfficialRealDepartments() {
       icon: 'heart',
       closedManually: false,
       nullVotes: 0,
-      candidates: []
+      candidates: [ { id: 'c_9_1', name: 'Cleine', photo: null, votes: 0 } ]
     },
     {
       id: 10,
@@ -180,7 +180,7 @@ function getOfficialRealDepartments() {
       icon: 'home',
       closedManually: false,
       nullVotes: 0,
-      candidates: []
+      candidates: [ { id: 'c_15_1', name: 'Wilton', photo: null, votes: 0 } ]
     },
     {
       id: 16,
